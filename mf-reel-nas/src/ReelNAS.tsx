@@ -227,17 +227,8 @@ const Camera: React.FC<{foreground?: boolean}> = ({foreground = false}) => {
   );
 };
 
-/* person layer over the cards, only while a card is on screen */
-const CARD_WINDOWS = (): [number, number][] => [
-  [F(DEAL_T.in), F(DEAL_T.out) + 8],
-  [F(APPROVED_T.in), F(APPROVED_T.out) + 8],
-  [F(BADGE_T.in), F(BADGE_T.out) + 8],
-];
-const HeadOverCards: React.FC = () => {
-  const frame = useCurrentFrame();
-  if (!CARD_WINDOWS().some(([a, b]) => frame >= a && frame <= b)) return null;
-  return <Camera foreground />;
-};
+/* person layer over the cards — kept on for the whole video so it never pops in/out */
+const HeadOverCards: React.FC = () => <Camera foreground />;
 
 /* hook title: "inspired by a true story" on top, EN + AR */
 const HookTitle: React.FC = () => {
