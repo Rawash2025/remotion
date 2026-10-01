@@ -26,7 +26,7 @@
   <div id="log"></div>
 </main>
 <script type="module">
-  import {separateVideoLayers, canUseVideoMatting} from 'https://cdn.jsdelivr.net/npm/@remotion/video-matting@4.0.529/+esm';
+  import {separateVideoLayers, canUseVideoMatting, downloadVideoMattingModel} from 'https://cdn.jsdelivr.net/npm/@remotion/video-matting@4.0.529/+esm';
   const $ = (id) => document.getElementById(id);
   const log = (t) => ($('log').textContent = t);
   const ok = await canUseVideoMatting({model: 'modnet'});
@@ -35,6 +35,12 @@
   $('go').onclick = async () => {
     $('go').disabled = true;
     try {
+      log('بيحمّل الموديل أول مرة…');
+      await downloadVideoMattingModel({
+        model: 'modnet',
+        onProgress: (p) => { $('bar').value = p.progress ?? 0; log(`بيحمّل الموديل… ${Math.round((p.progress ?? 0) * 100)}%`); },
+      });
+      $('bar').value = 0;
       const result = await separateVideoLayers({
         src: $('file').files[0],
         model: 'modnet',
