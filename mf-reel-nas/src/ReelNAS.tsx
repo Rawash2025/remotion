@@ -162,8 +162,8 @@ const Footage: React.FC<{src: string; style: React.CSSProperties}> = ({src, styl
   if (DROP_F === 0) return v(0);
   return (
     <>
-      <Sequence durationInFrames={HOOK_F} layout="none">{v(0)}</Sequence>
-      <Sequence from={HOOK_F} layout="none">{v(HOOK_F + DROP_F)}</Sequence>
+      <Sequence durationInFrames={HOOK_F}>{v(0)}</Sequence>
+      <Sequence from={HOOK_F} premountFor={30}>{v(HOOK_F + DROP_F)}</Sequence>
     </>
   );
 };
@@ -203,7 +203,8 @@ const Camera: React.FC<{foreground?: boolean}> = ({foreground = false}) => {
   const filt = `${lookOn ? 'url(#mfLook) ' : ''}contrast(${1 + 0.1 * bwP}) saturate(1) grayscale(${bwP}) brightness(${1 - 0.45 * endP}) blur(${6 * endP}px)`;
   const video = <Footage src={foreground ? 'main_fg.webm' : 'main.mp4'} style={{width: '100%', height: '100%', objectFit: 'cover', filter: filt}} />;
   const frozen = frame >= VIDEO_FRAMES - 2;
-  const V = frozen ? <Freeze frame={VIDEO_FRAMES - 2}>{video}</Freeze> : video;
+  // keep the same tree when freezing so the video element is not remounted (that flashed a green frame)
+  const V = <Freeze frame={VIDEO_FRAMES - 2} active={frozen}>{video}</Freeze>;
   const E = ed.eyeLift;
   const lift = E.show ? (
     <AbsoluteFill style={{filter: 'url(#mfLift)',
@@ -602,7 +603,7 @@ export const ReelNAS: React.FC<Edit> = (props) => {
       ) : (
         <>
           <Sequence durationInFrames={HOOK_F}><Audio src={staticFile('voice_studio.wav')} volume={props.voiceVolume} /></Sequence>
-          <Sequence from={HOOK_F}><Audio src={staticFile('voice_studio.wav')} trimBefore={HOOK_F + DROP_F} volume={props.voiceVolume} /></Sequence>
+          <Sequence from={HOOK_F} premountFor={30}><Audio src={staticFile('voice_studio.wav')} trimBefore={HOOK_F + DROP_F} volume={props.voiceVolume} /></Sequence>
         </>
       )}
       <Audio src={staticFile(props.musicTrack)} volume={(fr) => props.musicVolume * (1 - props.musicDuck * (envArr[Math.min(srcOf(fr), envArr.length - 1)] ?? 0))} />
