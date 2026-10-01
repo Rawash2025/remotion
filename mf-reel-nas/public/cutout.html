@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MF — قص الشخص من الفيديو</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #171914; color: #F2EFE7; font: 16px/1.6 system-ui, sans-serif; }
+  main { width: min(520px, 92vw); padding: 32px; border: 1px solid rgba(214,181,109,.35); border-radius: 18px; background: #22251d; }
+  h1 { margin: 0 0 8px; font-size: 22px; color: #D6B56D; }
+  p { margin: 0 0 18px; opacity: .8; }
+  input, button { font: inherit; }
+  button { margin-top: 16px; width: 100%; padding: 14px; border: 0; border-radius: 12px; background: #D6B56D; color: #171914; font-weight: 700; cursor: pointer; }
+  button:disabled { opacity: .45; cursor: default; }
+  progress { width: 100%; height: 10px; margin-top: 18px; accent-color: #D6B56D; }
+  #log { margin-top: 10px; min-height: 1.6em; font-size: 14px; opacity: .85; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>قص الشخص من الفيديو</h1>
+  <p>اختار <b>public/main.mp4</b> ودوس ابدأ. هينزل ملف <b>main_fg.webm</b> — حطه في فولدر <b>public</b>.</p>
+  <input id="file" type="file" accept="video/mp4" />
+  <button id="go" disabled>ابدأ</button>
+  <progress id="bar" max="1" value="0"></progress>
+  <div id="log"></div>
+</main>
+<script type="module">
+  import {separateVideoLayers, canUseVideoMatting} from 'https://cdn.jsdelivr.net/npm/@remotion/video-matting@4.0.529/+esm';
+  const $ = (id) => document.getElementById(id);
+  const log = (t) => ($('log').textContent = t);
+  const ok = await canUseVideoMatting({model: 'modnet'});
+  if (!ok.supported) log('المتصفح ده مش بيدعم WebGPU — افتح الصفحة في Google Chrome.\n' + ok.detailedReason);
+  $('file').onchange = () => ($('go').disabled = !$('file').files.length || !ok.supported);
+  $('go').onclick = async () => {
+    $('go').disabled = true;
+    try {
+      const result = await separateVideoLayers({
+        src: $('file').files[0],
+        model: 'modnet',
+        audio: 'none',
+        videoBitrate: 'very-high',
+        onModelLoadProgress: (p) => log('بيحمّل الموديل… ' + (p.progress != null ? Math.round(p.progress * 100) + '%' : '')),
+        onProgress: (p) => {
+          $('bar').value = p.progress ?? 1;
+          log(p.stage === 'processing' ? `بيقص… ${Math.round((p.progress ?? 0) * 100)}%` : 'بيجهز الملف…');
+        },
+      });
+      const blob = await result.foreground.getBlob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'main_fg.webm';
+      a.click();
+      log(`خلص ✓ (${(blob.size / 1e6).toFixed(1)} MB) — حط main_fg.webm في فولدر public`);
+      window.__done = blob.size;
+    } catch (e) {
+      log('حصل خطأ: ' + (e?.message ?? e));
+      window.__error = String(e?.stack ?? e);
+    }
+    $('go').disabled = false;
+  };
+  window.__ready = true;
+</script>
+</body>
+</html>
