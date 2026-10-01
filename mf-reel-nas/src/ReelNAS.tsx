@@ -363,9 +363,10 @@ const card: React.CSSProperties = {
 const eyebrow: React.CSSProperties = {fontSize: 20, fontWeight: 600, letterSpacing: 4, color: GOLD};
 const useEnter = (startF: number, endF: number, dist = 30) => {
   const frame = useCurrentFrame();
-  const i = interpolate(frame - startF, [0, 8], [0, 1], {...clamp, easing: ease});
-  const o = interpolate(frame - endF, [0, 7], [0, 1], {...clamp, easing: Easing.in(Easing.cubic)});
-  return {visible: frame >= startF && frame <= endF + 8, style: {opacity: i * (1 - o), transform: `translateY(${(1 - i) * dist - o * 20}px) scale(${0.97 + 0.03 * i})`}};
+  // fast in/out; the exit FINISHES at endF so a card is gone before the cut to the next (higher) framing
+  const i = interpolate(frame - startF, [0, 5], [0, 1], {...clamp, easing: ease});
+  const o = interpolate(frame - (endF - 5), [0, 5], [0, 1], {...clamp, easing: Easing.in(Easing.cubic)});
+  return {visible: frame >= startF && frame < endF, style: {opacity: i * (1 - o), transform: `translateY(${(1 - i) * dist - o * 20}px) scale(${0.97 + 0.03 * i})`}};
 };
 const Check: React.FC<{p: number; color?: string}> = ({p, color = GOLD}) => (
   <svg width="40" height="40" viewBox="0 0 40 40">
